@@ -32,19 +32,38 @@ pip install zarr
 ## Data
 - ERA5: 41 GB compressed, about 51 GB extracted, 16,436 daily zarr files (1979 to 2023), 673,876 files in total
 - Climatology: 9.2 GB compressed, about 11 GB extracted, 8,077 files
-- Both are in the cloud bucket at gs://leap-persistent/maryamfarhan/chaosbench/ and the file counts match the local copies
+- Both are in the cloud bucket at gs://leap-persistent/maryamfarhan/chaosbench/ and the file counts match the local copies (ERA5: 16,436 daily folders, climatology: 8,077 files)
 - Upload with gcloud storage cp -r: about 21 minutes for ERA5 (38 MiB/s) and a few minutes for climatology (103 MiB/s)
 - /tmp is wiped when the server stops. ERA5 lives in /tmp because the home folder is shared and nearly full, so restore it from the bucket after a restart.
+
+## How teammates get the data
+Run these on your own LEAP hub server (gcloud is already logged in there). First check that you can read the bucket:
+
+```
+gcloud storage ls gs://leap-persistent/maryamfarhan/chaosbench/
+```
+
+You should see era5/ and climatology/. Then copy the data and link it into the repo:
+
+```
+mkdir -p /tmp/chaosdata
+gcloud storage cp -r gs://leap-persistent/maryamfarhan/chaosbench/era5 /tmp/chaosdata/
+gcloud storage cp -r gs://leap-persistent/maryamfarhan/chaosbench/climatology /tmp/chaosdata/
+mkdir -p ~/ChaosBench/data
+ln -sfn /tmp/chaosdata/era5 ~/ChaosBench/data/era5
+ln -sfn /tmp/chaosdata/climatology ~/ChaosBench/data/climatology
+```
+
+/tmp is wiped when your server stops, so repeat this after a restart. If you get "permission denied" on the first command, tell Maryam.
 
 ## Run order on the hub
 1. Start the GPU server (PyTorch image) and open a terminal.
 2. Clone the repo and install the requirements (see Problems and fixes).
-3. Put ERA5 in /tmp/chaosdata/era5, either by restoring from the bucket or by streaming the download.
-4. Put climatology in the home folder, for example ~/chaosclim/climatology.
-5. Link both folders into ChaosBench/data as era5 and climatology.
-6. Write the test config below and run training in the background.
+3. Get the data (see How teammates get the data, or stream the download from Hugging Face).
+4. Link both folders into ChaosBench/data as era5 and climatology.
+5. Write the test config below and run training in the background.
 
-Restore ERA5 after a restart:
+Restore ERA5 only after a restart:
 
 ```
 mkdir -p /tmp/chaosdata
